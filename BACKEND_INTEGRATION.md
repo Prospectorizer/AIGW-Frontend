@@ -1,14 +1,13 @@
 # Go backend integration
 
-The frontend calls the Go service directly. It does not define Next.js API routes.
+The browser calls the same-origin Next.js proxy. The proxy keeps the control-plane token in an HttpOnly cookie and forwards authenticated requests to Go.
 
 ## Local configuration
 
 Create `.env.local` in the frontend:
 
 ```env
-NEXT_PUBLIC_AIGW_BACKEND_URL=http://localhost:5000
-NEXT_PUBLIC_AIGW_GATEWAY_API_KEY=aigw_sk_development_key
+AIGW_BACKEND_URL=http://localhost:5000
 ```
 
 Set the Go server port in `AIGW-Backend/config.json`:

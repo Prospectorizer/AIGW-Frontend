@@ -7,10 +7,10 @@ export class AigwApiError extends Error {
   }
 }
 
-const API_URL = (process.env.NEXT_PUBLIC_AIGW_BACKEND_URL ?? "http://localhost:5000").replace(/\/$/, "");
+const API_URL = "/api/proxy";
 
 export async function getAigw<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${API_URL}${scopePath(path)}`, {
     cache: "no-store",
     signal,
   });
@@ -31,9 +31,9 @@ export async function getAigw<T>(path: string, signal?: AbortSignal): Promise<T>
 }
 
 export async function postAigw<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${API_URL}${scopePath(path)}`, {
     method: "POST",
-    headers: gatewayHeaders(path),
+    headers: gatewayHeaders(),
     body: JSON.stringify(body),
   });
   const payload = (await response.json()) as ApiEnvelope<T> | T;
@@ -52,10 +52,18 @@ export async function postAigw<T>(path: string, body: unknown): Promise<T> {
   return payload;
 }
 
-function gatewayHeaders(path: string): HeadersInit {
+function scopePath(path: string): string {
+  if (typeof window === "undefined" || path.startsWith("/api/auth/")) return path;
+  const match = window.location.pathname.match(/^\/dashboard\/([^/]+)\/([^/]+)/);
+  if (!match) return path;
+  const url = new URL(path, window.location.origin);
+  url.searchParams.set("organization", decodeURIComponent(match[1]));
+  url.searchParams.set("project", decodeURIComponent(match[2]));
+  return `${url.pathname}${url.search}`;
+}
+
+function gatewayHeaders(): HeadersInit {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const apiKey = process.env.NEXT_PUBLIC_AIGW_GATEWAY_API_KEY;
-  if (apiKey && path.startsWith("/v1/")) headers.Authorization = `Bearer ${apiKey}`;
   return headers;
 }
 

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Prospector — AI Gateway",
-  description: "Ship reliable AI with one intelligent gateway.",
+  title: "AI Compute Gateway",
+  description: "Route each AI workload to the smallest acceptable model and most efficient execution target.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
