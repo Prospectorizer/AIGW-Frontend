@@ -30,10 +30,12 @@ export async function getAigw<T>(path: string, signal?: AbortSignal): Promise<T>
   return payload;
 }
 
-export async function postAigw<T>(path: string, body: unknown): Promise<T> {
+export async function postAigw<T>(path: string, body: unknown, gatewayApiKey?: string): Promise<T> {
+  const headers = gatewayHeaders();
+  if (gatewayApiKey) headers.set("X-Gateway-API-Key", gatewayApiKey);
   const response = await fetch(`${API_URL}${scopePath(path)}`, {
     method: "POST",
-    headers: gatewayHeaders(),
+    headers,
     body: JSON.stringify(body),
   });
   const payload = (await response.json()) as ApiEnvelope<T> | T;
@@ -62,9 +64,8 @@ function scopePath(path: string): string {
   return `${url.pathname}${url.search}`;
 }
 
-function gatewayHeaders(): HeadersInit {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  return headers;
+function gatewayHeaders(): Headers {
+  return new Headers({ "Content-Type": "application/json" });
 }
 
 function isEnvelope<T>(value: ApiEnvelope<T> | T): value is ApiEnvelope<T> {
