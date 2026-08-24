@@ -97,11 +97,11 @@ import _ "github.com/go-sql-driver/mysql"
 
 Run `migrations/mysql/001_schema.sql` and `002_seed_data.sql` before starting the service.
 
-## 3. Make admin changes affect gateway traffic
+## 3. Live gateway traffic
 
-Mounting the admin API is not sufficient by itself. The current runnable gateway calls `provider.InitAll(cfg)`, `auth.Middleware(cfg, ...)`, and `proxy.NewHandler(cfg, ...)`, which use static JSON configuration. The MySQL `store.Store` used by the admin package is separate.
+When MySQL is enabled, `/v1/chat/completions` authenticates control-plane-issued project keys and resolves enabled models/providers from the shared store. With MySQL disabled, it retains the static `config.json` fallback.
 
-Refactor provider resolution, tenant-key lookup, model allowlists, budgets, and cache configuration to read from the shared `store.Store`. Otherwise a provider created in the UI appears in MySQL but is not used by `/v1/chat/completions` until the process/configuration is rebuilt.
+Create and revoke project keys from **API keys**. A new raw key is returned once; only its SHA-256 digest is stored. Provider/model changes are loaded into the store immediately, while provider client registration currently requires a gateway restart after changing provider connection details.
 
 ## 4. Protect admin and analytics endpoints
 

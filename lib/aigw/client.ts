@@ -54,6 +54,19 @@ export async function postAigw<T>(path: string, body: unknown, gatewayApiKey?: s
   return payload;
 }
 
+export async function deleteAigw<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_URL}${scopePath(path)}`, {
+    method: "DELETE",
+    headers: gatewayHeaders(),
+    body: JSON.stringify(body),
+  });
+  const payload = (await response.json()) as ApiEnvelope<T>;
+  if (!response.ok || !payload.ok || payload.data === undefined) {
+    throw new AigwApiError(payload.error ?? `Gateway returned ${response.status}`, response.status);
+  }
+  return payload.data;
+}
+
 function scopePath(path: string): string {
   if (typeof window === "undefined" || path.startsWith("/api/auth/")) return path;
   const match = window.location.pathname.match(/^\/dashboard\/([^/]+)\/([^/]+)/);

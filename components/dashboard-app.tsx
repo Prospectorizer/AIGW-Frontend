@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { postAigw } from "@/lib/aigw/client";
+import { deleteAigw, postAigw } from "@/lib/aigw/client";
 import type { GatewayHealth, GatewayRequest, ModelSpend, OverviewMetrics, Provider, ProviderModel, SpendPoint, TeamInvitation, TeamMember, TeamRole } from "@/lib/aigw/types";
 import { AiCopilot } from "./ai-copilot";
 import { BenchmarksPage, ComputeOptimizer, ComputeTargetsPage, WorkloadsPage } from "./compute-control-plane";
@@ -93,8 +93,8 @@ function Header({ title, onMenu, gatewayState, projectName, currentUser }: { tit
 
 function initials(name:string){return name.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join("").toUpperCase()||"U"}
 
-function Button({ children, secondary = false, onClick }: { children: React.ReactNode; secondary?: boolean; onClick?: () => void }) {
-  return <button className={`button ${secondary ? "secondary" : ""}`} onClick={onClick}>{children}</button>;
+function Button({ children, secondary = false, onClick, disabled = false }: { children: React.ReactNode; secondary?: boolean; onClick?: () => void; disabled?: boolean }) {
+  return <button className={`button ${secondary ? "secondary" : ""}`} onClick={onClick} disabled={disabled}>{children}</button>;
 }
 
 function Select({ children }: { children: React.ReactNode }) { return <button className="selectish">{children}<span>⌄</span></button>; }
@@ -171,22 +171,56 @@ function RequestDetail({ base, id, rows, state, error }: { base:string; id:strin
 function Providers(){
   const api = useAigw<Provider[]>("/api/admin/providers", []);
   const [modal,setModal]=useState(false);
+  const [editing,setEditing]=useState<Provider|null>(null);
   const [form,setForm]=useState({ displayName:"", apiKey:"", baseUrl:"https://api.openai.com", slug:"openai" });
   const [mutationError,setMutationError]=useState<string|null>(null);
   const [saving,setSaving]=useState(false);
   const cards = api.data.map(provider => ({ name:provider.display_name || provider.slug, slug:provider.slug, models:`${provider.model_count} models`, health:provider.is_enabled ? "Operational" : "Disabled", latency:"—", failures:"—", initial:provider.display_name?.[0] || provider.slug[0], backend:provider }));
-  async function createProvider(){
+  function openCreate(){setEditing(null);setForm({displayName:"",apiKey:"",baseUrl:"https://api.openai.com",slug:"openai"});setMutationError(null);setModal(true)}
+  function openEdit(provider:Provider){setEditing(provider);setForm({displayName:provider.display_name,apiKey:"",baseUrl:provider.base_url,slug:provider.slug});setMutationError(null);setModal(true)}
+  async function saveProvider(){
     setSaving(true); setMutationError(null);
-    try { await postAigw("/api/admin/providers/create", { slug:form.slug, display_name:form.displayName, adapter_type:"openai_compatible", base_url:form.baseUrl, api_key:form.apiKey, auth_header:"Authorization", auth_prefix:"Bearer", chat_endpoint:"/v1/chat/completions", priority:100 }); setModal(false); await api.refresh(); }
-    catch(caught){ setMutationError(caught instanceof Error?caught.message:"Provider creation failed"); }
+    try {
+      if(editing){await postAigw("/api/admin/providers/update",{id:editing.id,display_name:form.displayName,base_url:form.baseUrl,...(form.apiKey.trim()?{api_key:form.apiKey.trim()}:{})})}
+      else{await postAigw("/api/admin/providers/create", { slug:form.slug, display_name:form.displayName, adapter_type:"openai_compatible", base_url:form.baseUrl, api_key:form.apiKey, auth_header:"Authorization", auth_prefix:"Bearer", chat_endpoint:"/v1/chat/completions", priority:100 })}
+      setModal(false); await api.refresh();
+    }
+    catch(caught){ setMutationError(caught instanceof Error?caught.message:`Provider ${editing?"update":"creation"} failed`); }
     finally { setSaving(false); }
   }
   async function testProvider(slug:string){ try { const result=await postAigw<{reachable:boolean;error?:string}>("/api/admin/providers/test",{slug}); window.alert(result.reachable?`${slug} is reachable`:result.error??`${slug} is unavailable`); } catch(caught){ window.alert(caught instanceof Error?caught.message:"Test failed"); } }
   async function toggleProvider(provider:Provider){ await postAigw("/api/admin/providers/update",{id:provider.id,is_enabled:!provider.is_enabled}); await api.refresh(); }
-  return <div className="page-enter"><PageTitle title="Providers" subtitle="Connect and manage the model providers used by your gateway." actions={<Button onClick={()=>setModal(true)}><Icon name="plus"/> Add provider</Button>}/><BackendNotice state={api.state} error={api.error} refresh={api.refresh}/><div className="notice"><span>!</span><div><b>Provider secrets are handled by the Go backend.</b><p>The current Go schema stores API keys directly; add encryption at rest before production.</p></div><Link href="docs">Security requirements →</Link></div><div className="provider-grid">{cards.map(provider=><div className="provider-card" key={provider.slug}><div className="provider-card-top"><span className="big-provider p-o">{provider.initial}</span><button>•••</button></div><h3>{provider.name}</h3><p>{provider.slug} · {provider.backend?.base_url??"Configured endpoint"}</p><span className={`health-badge ${provider.health!=="Operational"?"degraded":""}`}><i/>{provider.health}</span><div className="provider-stats"><span><small>Models</small><b>{provider.models}</b></span><span><small>Avg latency</small><b>{provider.latency}</b></span><span><small>Failure rate</small><b>{provider.failures}</b></span></div><div className="provider-actions"><Button secondary onClick={()=>void testProvider(provider.slug)}>Test connection</Button><button aria-label={`Toggle ${provider.name}`} onClick={()=>provider.backend&&void toggleProvider(provider.backend)} className={`toggle ${provider.backend?.is_enabled!==false?"on":""}`}><i/></button></div></div>)}</div>{modal&&<Modal title="Connect a provider" close={()=>setModal(false)}><p className="modal-copy">This credential is sent directly to the Go admin API.</p>{mutationError&&<p className="form-error">{mutationError}</p>}<label>Provider slug<input value={form.slug} onChange={event=>setForm({...form,slug:event.target.value})} placeholder="openai"/></label><label>Credential name<input value={form.displayName} onChange={event=>setForm({...form,displayName:event.target.value})} placeholder="Production OpenAI"/></label><label>API key<input value={form.apiKey} onChange={event=>setForm({...form,apiKey:event.target.value})} type="password" placeholder="sk-••••••••••••••••"/></label><label>Base URL<input value={form.baseUrl} onChange={event=>setForm({...form,baseUrl:event.target.value})} placeholder="https://api.openai.com"/></label><div className="modal-actions"><Button secondary onClick={()=>setModal(false)}>Cancel</Button><Button onClick={()=>void createProvider()}>{saving?"Connecting...":"Connect provider"}</Button></div></Modal>}</div>
+  return <div className="page-enter"><PageTitle title="Providers" subtitle="Connect and manage the model providers used by your gateway." actions={<Button onClick={openCreate}><Icon name="plus"/> Add provider</Button>}/><BackendNotice state={api.state} error={api.error} refresh={api.refresh}/><div className="notice"><span>!</span><div><b>Provider secrets are handled by the Go backend.</b><p>The current Go schema stores API keys directly; add encryption at rest before production.</p></div><Link href="docs">Security requirements →</Link></div><div className="provider-grid">{cards.map(provider=><div className="provider-card" key={provider.slug}><div className="provider-card-top"><span className="big-provider p-o">{provider.initial}</span><button aria-label={`Edit ${provider.name}`} onClick={()=>provider.backend&&openEdit(provider.backend)}>•••</button></div><h3>{provider.name}</h3><p>{provider.slug} · {provider.backend?.base_url??"Configured endpoint"}</p><span className={`health-badge ${provider.health!=="Operational"?"degraded":""}`}><i/>{provider.health}</span><div className="provider-stats"><span><small>Models</small><b>{provider.models}</b></span><span><small>Avg latency</small><b>{provider.latency}</b></span><span><small>Failure rate</small><b>{provider.failures}</b></span></div><div className="provider-actions"><Button secondary onClick={()=>void testProvider(provider.slug)}>Test connection</Button><Button secondary onClick={()=>provider.backend&&openEdit(provider.backend)}>Edit</Button><button aria-label={`Toggle ${provider.name}`} onClick={()=>provider.backend&&void toggleProvider(provider.backend)} className={`toggle ${provider.backend?.is_enabled!==false?"on":""}`}><i/></button></div></div>)}</div>{modal&&<Modal title={editing?`Edit ${editing.display_name||editing.slug}`:"Connect a provider"} close={()=>setModal(false)}><p className="modal-copy">{editing?"Leave the API key blank to keep the current credential. Restart the gateway after changing connection details.":"This credential is sent directly to the Go admin API."}</p>{mutationError&&<p className="form-error">{mutationError}</p>}<label>Provider slug<input value={form.slug} onChange={event=>setForm({...form,slug:event.target.value})} placeholder="openai" disabled={editing!==null}/></label><label>Credential name<input value={form.displayName} onChange={event=>setForm({...form,displayName:event.target.value})} placeholder="Production OpenAI"/></label><label>API key {editing&&<small>(optional)</small>}<input value={form.apiKey} onChange={event=>setForm({...form,apiKey:event.target.value})} type="password" placeholder={editing?"Leave blank to keep current key":"sk-••••••••••••••••"}/></label><label>Base URL<input value={form.baseUrl} onChange={event=>setForm({...form,baseUrl:event.target.value})} placeholder="https://api.openai.com"/></label><div className="modal-actions"><Button secondary onClick={()=>setModal(false)}>Cancel</Button><Button onClick={()=>void saveProvider()}>{saving?(editing?"Saving...":"Connecting..."):(editing?"Save changes":"Connect provider")}</Button></div></Modal>}</div>
 }
 
-function ApiKeys(){return <div className="page-enter"><PageTitle title="API keys" subtitle="Gateway credentials are stored in MySQL."/><Panel title="Project API keys"><div className="empty-inline">The backend does not yet expose a project-scoped API-key management endpoint. No placeholder keys are shown. Use an existing tenant key in the Playground.</div></Panel></div>}
+type GatewayKey={id:number;label:string;is_active:boolean;created_at:string};
+function ApiKeys(){
+  const api=useAigw<GatewayKey[]>("/api/control/api-keys",[]);
+  const [label,setLabel]=useState("development");
+  const [created,setCreated]=useState<string|null>(null);
+  const [copied,setCopied]=useState(false);
+  const [creating,setCreating]=useState(false);
+  const [error,setError]=useState<string|null>(null);
+  async function create(){
+    if(creating)return;
+    setCreating(true);setError(null);setCreated(null);setCopied(false);
+    try{const result=await postAigw<{api_key:string}>("/api/control/api-keys",{label});setCreated(result.api_key);await api.refresh()}
+    catch(caught){setError(caught instanceof Error?caught.message:"Could not create key")}
+    finally{setCreating(false)}
+  }
+  async function copyCreated(){if(!created)return;await navigator.clipboard.writeText(created);setCopied(true)}
+  async function revoke(id:number){if(!window.confirm("Revoke this gateway key? Applications using it will stop working."))return;setError(null);try{await deleteAigw("/api/control/api-keys",{id});await api.refresh()}catch(caught){setError(caught instanceof Error?caught.message:"Could not revoke key")}}
+  return <div className="page-enter">
+    <PageTitle title="API keys" subtitle="Create project credentials for the Playground or OpenAI-compatible clients."/>
+    <BackendNotice state={api.state} error={api.error} refresh={api.refresh}/>
+    {error&&<div className="backend-notice"><span>!</span><div><b>Key operation failed</b><p>{error}</p></div></div>}
+    {created&&<section className="new-key-card"><div><span className="new-key-icon">✓</span><div><h3>Copy your new key now</h3><p>This is the only time the complete key will be displayed.</p></div></div><div className="new-key-value"><code>{created}</code><Button secondary onClick={()=>void copyCreated()}><Icon name="copy"/> {copied?"Copied":"Copy"}</Button></div></section>}
+    <section className="api-key-panel">
+      <div className="api-key-head"><div><h3>Project API keys</h3><p>Existing secrets cannot be displayed because only their secure hashes are stored.</p></div><div className="api-key-create"><label><span>Key label</span><input value={label} onChange={event=>setLabel(event.target.value)} placeholder="development"/></label><Button onClick={()=>void create()} disabled={creating}><Icon name="plus"/> {creating?"Creating…":"Create key"}</Button></div></div>
+      {api.data.length===0?<div className="empty-inline">No keys yet. Create one, copy it, then paste it into the Playground.</div>:<div className="api-key-list">{api.data.map(key=><div className="api-key-row" key={key.id}><span className="key-symbol"><Icon name="keys"/></span><div className="api-key-identity"><b>{key.label||"Unnamed key"}</b><code>aigw_sk_••••••••••••••••</code></div><div className="api-key-meta"><span className={`health-badge ${key.is_active?"":"degraded"}`}><i/>{key.is_active?"Active":"Revoked"}</span><small>Created {new Date(key.created_at).toLocaleDateString()}</small></div><div className="api-key-actions">{key.is_active?<Button secondary onClick={()=>void revoke(key.id)}>Revoke</Button>:<span>Cannot be used</span>}</div></div>)}</div>}
+    </section>
+  </div>
+}
 
 function Routing(){return <div className="page-enter"><PageTitle title="Model routes" subtitle="Routing rules persisted by the gateway."/><Panel title="Model routes"><div className="empty-inline">The current backend has no project-scoped routing-rules endpoint. Static route examples have been removed.</div></Panel></div>}
 
