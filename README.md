@@ -24,10 +24,36 @@ inference request with it to save it automatically. Failed requests do not add
 model IDs. For providers without a model listing endpoint, saved IDs remain
 selectable.
 
-The **Providers** page can add an OpenAI-compatible provider with its base URL,
-mode, and optional API key environment variable name. Export that variable in
-the backend process before adding the provider. The key value is never stored in
-SQLite. Custom providers and saved model IDs remain after an API restart.
+The **Settings** page saves a default provider and model for this workspace.
+Requests that omit them use these defaults; explicit values take priority.
+
+The **Providers** page opens an Add/Edit dialog for custom OpenAI-compatible
+providers. The provider ID stays fixed when editing; name, mode, base URL, and
+API key environment variable can be changed. Built-in self-hosted providers
+are managed by backend environment variables. For custom providers using an
+environment variable, export it in the backend process before saving. Its key
+value is never stored in SQLite. Custom providers and
+saved model IDs remain after an API restart. Use
+**Check models** on a configured provider to test its model listing endpoint;
+the result does not test inference. The **Infrastructure** page can show the
+latest self-hosted request for a selected provider, and **Diagnoses** shows
+evidence and recommendations for saved findings from requests and infrastructure.
+
+In SaaS mode, enter the workspace ID and sign in with your company SSO account.
+Your exact verified email must be assigned to that workspace by an admin. The
+UI uses an HttpOnly session cookie; the workspace API token is for scripts.
+For local development with `AIGW_SAAS_DEV_AUTH=1`, enter the workspace ID and
+the one-time workspace API token instead. This checks workspace access without
+OIDC and keeps the token in browser session storage for that tab.
+The SaaS backend keeps tenant configuration in MySQL and request observations
+in ClickHouse. The UI does not connect to either database directly.
+Static tenant mode also remains available: enter the tenant API token at the
+sign-in screen. That token stays in this browser tab's session storage.
+Built-in external provider cards then offer **Connect** or **Replace key**. The
+connection dialog sends the key to the gateway, which encrypts it in that
+tenant's database, and opens Test Lab with the provider selected. A custom
+provider can also be saved first and connected from its card. In tenant mode,
+custom providers cannot read shared backend environment variables for keys.
 
 Start the Go API separately from `../AIGW-Backend` with `go run ./cmd/server`.
 Start llama-server separately from `../llama.cpp`. No PID needs to be copied

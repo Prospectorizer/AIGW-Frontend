@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import '../src/styles.css'
+import '../src/theme.css'
 
 export const metadata: Metadata = {
   title: 'AI Prospector',

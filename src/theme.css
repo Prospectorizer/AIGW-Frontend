@@ -1,0 +1,53 @@
+.theme-toggle{border:1px solid #35505e;background:#162834;color:#dceae7;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:700;white-space:nowrap}
+.theme-toggle:hover{border-color:#62c9a9}
+.entry-theme{position:absolute;top:18px;right:20px}
+.page>.panel{margin-bottom:16px}
+.snippet-controls{padding:0 22px 14px;display:flex;align-items:end;gap:20px;flex-wrap:wrap}
+.snippet-controls label{display:grid;gap:6px;color:#a9bac4;font-size:12px;min-width:min(340px,100%)}
+.snippet-controls input{width:100%;background:#0d1720;border:1px solid #2c3f4e;color:#dde9ef;border-radius:7px;padding:9px 10px;font:inherit}
+.snippet-controls p{color:#8095a4;font-size:11px;line-height:1.5;max-width:480px;margin:0}
+.curl-sample{white-space:pre;overflow:auto;overflow-wrap:normal;max-height:500px;font-size:11px}
+
+:root[data-theme=light]{color-scheme:light;background:#f3f7f8;color:#18303b}
+:root[data-theme=light] body{background:#f3f7f8}
+:root[data-theme=light] .sidebar{background:#e9f1f2;border-color:#cedde0}
+:root[data-theme=light] .topbar{background:#fff;border-color:#d9e4e7}
+:root[data-theme=light] .nav{color:#506875}
+:root[data-theme=light] .nav:hover,:root[data-theme=light] .compact-list button:hover,:root[data-theme=light] tbody tr:hover,:root[data-theme=light] .diagnosis-card:hover{background:#e1eff0;color:#173940}
+:root[data-theme=light] .nav.active{background:#cde9df;color:#086b55}
+:root[data-theme=light] .brand small,:root[data-theme=light] .nav-label,:root[data-theme=light] .sidebar-caption,:root[data-theme=light] .status small,:root[data-theme=light] .breadcrumb span{color:#627985}
+:root[data-theme=light] .breadcrumb,:root[data-theme=light] .heading h1{color:#18303b}
+:root[data-theme=light] .status,:root[data-theme=light] .stat,:root[data-theme=light] .panel,:root[data-theme=light] .toolbar,:root[data-theme=light] .provider-card,:root[data-theme=light] .diagnosis-card,:root[data-theme=light] .detail-meta,:root[data-theme=light] .tenant-entry form,:root[data-theme=light] .provider-dialog{background:#fff;border-color:#d5e2e5;color:#18303b}
+:root[data-theme=light] .status strong,:root[data-theme=light] .message strong,:root[data-theme=light] .empty strong,:root[data-theme=light] .kv strong,:root[data-theme=light] td.strong,:root[data-theme=light] .stat strong,:root[data-theme=light] .provider-card h2{color:#18303b}
+:root[data-theme=light] .heading p,:root[data-theme=light] .panel-head p,:root[data-theme=light] .stat small,:root[data-theme=light] .stat>span,:root[data-theme=light] .distribution span,:root[data-theme=light] .compact-list small,:root[data-theme=light] .application-row small,:root[data-theme=light] .provider-card p,:root[data-theme=light] .diagnosis-card p,:root[data-theme=light] .diagnosis-card small,:root[data-theme=light] .message,:root[data-theme=light] .empty,:root[data-theme=light] .footnote,:root[data-theme=light] .form-help,:root[data-theme=light] .pagination,:root[data-theme=light] .timeline small,:root[data-theme=light] .chart-axis,:root[data-theme=light] .test-result-link span,:root[data-theme=light] .provider-actions small,:root[data-theme=light] .provider-toolbar,:root[data-theme=light] .diagnosis-evidence ul{color:#536c79}
+:root[data-theme=light] .kv>span,:root[data-theme=light] .toolbar label,:root[data-theme=light] .test-form label,:root[data-theme=light] .provider-form label,:root[data-theme=light] .tenant-entry label,:root[data-theme=light] .infrastructure-controls label{color:#47616f}
+:root[data-theme=light] .kv,:root[data-theme=light] .compact-list button,:root[data-theme=light] .application-row,:root[data-theme=light] td,:root[data-theme=light] .form,:root[data-theme=light] .diagnosis-evidence,:root[data-theme=light] .provider-dialog-head,:root[data-theme=light] .provider-form-actions{border-color:#dce7e9}
+:root[data-theme=light] th{background:#eaf2f4;color:#506b78}
+:root[data-theme=light] td{color:#425b69}
+:root[data-theme=light] .progress{background:#dcebe9}
+:root[data-theme=light] .ghost,:root[data-theme=light] .icon-button,:root[data-theme=light] .theme-toggle,:root[data-theme=light] .pagination button,:root[data-theme=light] .dialog-close,:root[data-theme=light] .view-toggle button{background:#f1f6f7;border-color:#cbdde0;color:#284c56}
+:root[data-theme=light] .view-toggle,:root[data-theme=light] .view-toggle button+button{border-color:#cbdde0}
+:root[data-theme=light] .view-toggle button.active{background:#caeadb;color:#086b55}
+:root[data-theme=light] .toolbar select,:root[data-theme=light] .form input,:root[data-theme=light] .test-form select,:root[data-theme=light] .test-form textarea,:root[data-theme=light] .provider-form input,:root[data-theme=light] .provider-form select,:root[data-theme=light] .infrastructure-controls select,:root[data-theme=light] .tenant-entry input,:root[data-theme=light] .snippet-controls input{background:#fbfdfd;border-color:#c8dadd;color:#18303b}
+:root[data-theme=light] .snippet-controls label{color:#47616f}
+:root[data-theme=light] .snippet-controls p{color:#536c79}
+:root[data-theme=light] .provider-form input:disabled{background:#edf3f4;color:#6c8089}
+:root[data-theme=light] .primary{background:#087f67;color:#fff}
+:root[data-theme=light] .primary:hover{background:#076c58}
+:root[data-theme=light] .eyebrow,:root[data-theme=light] .environment,:root[data-theme=light] .back,:root[data-theme=light] .text-button,:root[data-theme=light] .source{color:#087f67}
+:root[data-theme=light] .pill.good,:root[data-theme=light] .capabilities .supported{background:#d9f2e7;border-color:#a6dac3;color:#087256}
+:root[data-theme=light] .pill.bad{background:#fbe5e0;color:#a64338}
+:root[data-theme=light] .pill.neutral,:root[data-theme=light] .capabilities .unsupported{background:#e8f0f2;border-color:#d2e0e3;color:#526d78}
+:root[data-theme=light] .notice,:root[data-theme=light] .signal-explainer{background:#eaf4f2;border-color:#bad9d0;color:#365961}
+:root[data-theme=light] .diagnosis-title{background:#fff4e8;border-color:#ead5bd}
+:root[data-theme=light] .diagnosis-detail p,:root[data-theme=light] .diagnosis-detail li{color:#405965}
+:root[data-theme=light] .timeline>div{border-color:#bed8ce}
+:root[data-theme=light] .timeline-point{border-color:#e7f5ee}
+:root[data-theme=light] pre{background:#f3f8f8;border-color:#d2e2e3;color:#174d49}
+:root[data-theme=light] .tenant-entry{background:#f3f7f8}
+:root[data-theme=light] .tenant-entry p{color:#506a78}
+:root[data-theme=light] .tenant-banner{background:#fff;border-color:#b9d6ca;color:#225344;box-shadow:0 6px 20px #18303b18}
+:root[data-theme=light] .tenant-banner button{color:#087f67}
+:root[data-theme=light] .source{border-color:#aad5c5}
+:root[data-theme=light] .provider-dialog::backdrop{background:#17303b65}
+:root[data-theme=light] .chart-wrap svg line[stroke="#253443"]{stroke:#d5e3e5}

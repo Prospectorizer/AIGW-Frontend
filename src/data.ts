@@ -16,7 +16,8 @@ export type Summary = { requests:number; errors:number; error_rate:number; p50_l
 export type Provider = { id:string; name:string; mode:string; enabled:boolean; available:boolean|null; capabilities:Record<string,boolean> }
 export type Application = { id:number; name:string; description:string }
 
-export async function getJSON<T>(url:string):Promise<T> { const response = await fetch(url); if (!response.ok) throw new Error(`${response.status} ${response.statusText}`); return response.json() }
+export function apiFetch(input:string,init:RequestInit={}) { const headers=new Headers(init.headers);if(typeof window!=='undefined'&&(input.startsWith('/api/')||input.startsWith('/v1/'))){const token=sessionStorage.getItem('aigw_tenant_token');if(token)headers.set('Authorization','Bearer '+token);else if(init.method&& !['GET','HEAD','OPTIONS'].includes(init.method.toUpperCase())){const csrf=sessionStorage.getItem('aigw_csrf');if(csrf)headers.set('X-AIGW-CSRF',csrf)}}return fetch(input,{...init,headers}) }
+export async function getJSON<T>(url:string):Promise<T> { const response = await apiFetch(url); if (!response.ok) throw new Error(`${response.status} ${response.statusText}`); return response.json() }
 export function useResource<T>(url:string) { const [data,setData]=useState<T|null>(null); const [error,setError]=useState(''); const [loading,setLoading]=useState(true); const [version,setVersion]=useState(0); useEffect(()=>{let active=true;setLoading(true);setError('');getJSON<T>(url).then(value=>{if(active)setData(value)}).catch(err=>{if(active)setError(String(err))}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[url,version]);return {data,error,loading,reload:()=>setVersion(v=>v+1)} }
 export const ms=(v:Metric|undefined)=>v==null?'—':v>=1000?`${(v/1000).toFixed(2)} s`:`${v.toFixed(1)} ms`
 export const number=(v:Metric|undefined,digits=1)=>v==null?'—':v.toFixed(digits)
